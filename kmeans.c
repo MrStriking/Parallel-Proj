@@ -12,10 +12,8 @@ typedef struct {
     double y;
 } Point;
 
-double squared_euclidean_distance(Point a, Point b) {
-    double dx = a.x - b.x;
-    double dy = a.y - b.y;
-    return dx * dx + dy * dy;
+double euclidean_distance(Point a, Point b) {
+    return sqrt(pow((a.x - b.x), 2) + pow((a.y - b.y), 2));
 }
 
 void read_points_from_file(const char *filename, int num_points, Point *points) {
@@ -56,7 +54,7 @@ void k_means_clustering(const char *filename, int num_points, Point *points, int
             int closest_centroid = -1;
 
             for (int j = 0; j < num_clusters; j++) {
-                double dist = squared_euclidean_distance(points[i], centroids[j]);
+                double dist = euclidean_distance(points[i], centroids[j]);
                 if (dist < min_dist) {
                     min_dist = dist;
                     closest_centroid = j;
@@ -74,7 +72,7 @@ void k_means_clustering(const char *filename, int num_points, Point *points, int
         for (int i = 0; i < num_clusters; i++) {
             if (cluster_counts[i] > 0) {
                 Point new_centroid = {sum[i].x / cluster_counts[i], sum[i].y / cluster_counts[i]};
-                if (squared_euclidean_distance(centroids[i], new_centroid) > 0.0001) {
+                if (euclidean_distance(centroids[i], new_centroid) > 0.0001) {
                     centroids[i] = new_centroid;
                     converged = 0;
                 }
