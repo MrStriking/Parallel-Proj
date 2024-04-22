@@ -3,7 +3,7 @@
 #include <math.h>
 #include <string.h>
 #include <time.h>
-#include <omp.h> // Include OpenMP library
+#include <omp.h> 
 
 #define MAX_ITERATIONS 100
 
@@ -12,12 +12,30 @@ typedef struct {
     double y;
 } Point;
 
-// Function prototypes
-double euclidean_distance(Point a, Point b);
-void read_points_from_file(const char *filename, int num_points, Point *points);
-void initialize_centroids(Point *centroids, Point *points, int num_clusters, int num_points);
+double euclidean_distance(Point a, Point b) {
+    return sqrt((a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y));
+}
 
-// Performs k-means clustering using OpenMP
+void read_points_from_file(const char *filename, int num_points, Point *points) {
+    FILE *file = fopen(filename, "r");
+    if (!file) {
+        fprintf(stderr, "Unable to open file %s.\n", filename);
+        exit(EXIT_FAILURE);
+    }
+    for (int i = 0; i < num_points; i++) {
+        fscanf(file, "%lf %lf", &points[i].x, &points[i].y);
+    }
+    fclose(file);
+}
+
+void initialize_centroids(Point *centroids, Point *points, int num_clusters, int num_points) {
+    for (int i = 0; i < num_clusters; i++) {
+        int rand_index = rand() % num_points;
+        centroids[i] = points[rand_index];
+    }
+}
+
+
 void k_means_clustering(const char *filename, int num_points, Point *points, int num_clusters) {
     Point *centroids = (Point *)malloc(num_clusters * sizeof(Point));
     if (!centroids) {
@@ -28,16 +46,13 @@ void k_means_clustering(const char *filename, int num_points, Point *points, int
 
     clock_t start_time = clock();
 
-    // Arrays for holding sums and counts of points in each cluster
     Point *sums = (Point *)calloc(num_clusters, sizeof(Point));
     int *counts = (int *)calloc(num_clusters, sizeof(int));
 
     for (int iter = 0; iter < MAX_ITERATIONS; iter++) {
-        // Zero out sums and counts for this iteration
         memset(sums, 0, num_clusters * sizeof(Point));
         memset(counts, 0, num_clusters * sizeof(int));
 
-        // Parallel section for assigning points to the closest centroid
         #pragma omp parallel for
         for (int i = 0; i < num_points; i++) {
             double min_dist = INFINITY;
@@ -49,7 +64,6 @@ void k_means_clustering(const char *filename, int num_points, Point *points, int
                     closest = j;
                 }
             }
-            // Use critical section to update shared arrays
             #pragma omp critical
             {
                 sums[closest].x += points[i].x;
@@ -57,8 +71,6 @@ void k_means_clustering(const char *filename, int num_points, Point *points, int
                 counts[closest]++;
             }
         }
-
-        // Update centroids
         int converged = 1;
         #pragma omp parallel for
         for (int i = 0; i < num_clusters; i++) {
@@ -99,7 +111,7 @@ int main() {
         "points_250_000.txt"
     };
     const int num_points[] = {1000, 10000, 50000, 100000, 
-    400000
+        400000
     };
 
     for (int f = 0; f < sizeof(file_names) / sizeof(file_names[0]); f++) {
@@ -113,30 +125,4 @@ int main() {
         free(points);
     }
     return 0;
-}
-
-double euclidean_distance(Point a, Point b) {
-    return sqrt((a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y));
-}
-
-// Reads points from a file
-void read_points_from_file(const char *filename, int num_points, Point *points) {
-    FILE *file = fopen(filename, "r");
-    if (!file) {
-        fprintf(stderr, "Unable to open file %s.\n", filename);
-        exit(EXIT_FAILURE);
-    }
-    for (int i = 0; i < num_points; i++) {
-        fscanf(file, "%lf %lf", &points[i].x, &points[i].y);
-    }
-    fclose(file);
-}
-
-// Initializes centroids by randomly selecting points
-void initialize_centroids(Point *centroids, Point *points, int num_clusters, int num_points) {
-    srand(time(NULL)); // Seed for random number generation
-    for (int i = 0; i < num_clusters; i++) {
-        int rand_index = rand() % num_points;
-        centroids[i] = points[rand_index];
-    }
 }
