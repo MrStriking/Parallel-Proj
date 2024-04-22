@@ -56,7 +56,7 @@ void k_means_clustering(const char *filename, int num_points, Point *points, int
             int closest_centroid = -1;
 
             for (int j = 0; j < num_clusters; j++) {
-                double dist = euclidean_distance(points[i], centroids[j]);
+                double dist = squared_euclidean_distance(points[i], centroids[j]);
                 if (dist < min_dist) {
                     min_dist = dist;
                     closest_centroid = j;
@@ -74,7 +74,7 @@ void k_means_clustering(const char *filename, int num_points, Point *points, int
         for (int i = 0; i < num_clusters; i++) {
             if (cluster_counts[i] > 0) {
                 Point new_centroid = {sum[i].x / cluster_counts[i], sum[i].y / cluster_counts[i]};
-                if (euclidean_distance(centroids[i], new_centroid) > 0.0001) {
+                if (squared_euclidean_distance(centroids[i], new_centroid) > 0.0001) {
                     centroids[i] = new_centroid;
                     converged = 0;
                 }
