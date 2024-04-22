@@ -13,10 +13,19 @@ typedef struct {
     double y;
 } Point;
 
-double euclidean_distance(Point a, Point b) {
-    return sqrt(pow((a.x - b.x), 2) + pow((a.y - b.y), 2));
+// Function prototypes
+double squared_euclidean_distance(Point a, Point b);
+void read_points_from_file(const char *filename, int num_points, Point *points);
+void k_means_clustering(const char *filename, int num_points, Point *points, int num_clusters, int rank, int size);
+
+// Computes the squared Euclidean distance between two points
+double squared_euclidean_distance(Point a, Point b) {
+    double dx = a.x - b.x;
+    double dy = a.y - b.y;
+    return dx * dx + dy * dy;
 }
 
+// Reads points from a file
 void read_points_from_file(const char *filename, int num_points, Point *points) {
     FILE *file = fopen(filename, "r");
     if (!file) {
@@ -29,11 +38,8 @@ void read_points_from_file(const char *filename, int num_points, Point *points) 
     fclose(file);
 }
 
-void k_means_clustering(const char *filename, int num_points, Point *points, int num_clusters) {
-    int rank, size;
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    MPI_Comm_size(MPI_COMM_WORLD, &size);
-
+// Performs k-means clustering using MPI
+void k_means_clustering(const char *filename, int num_points, Point *points, int num_clusters, int rank, int size) {
     Point centroids[num_clusters];
     Point *all_centroids = NULL;
     int num_local_points = num_points / size;
@@ -54,11 +60,12 @@ void k_means_clustering(const char *filename, int num_points, Point *points, int
         double *sum_y = calloc(num_clusters, sizeof(double));
         int *counts = calloc(num_clusters, sizeof(int));
 
+        // Compute distances and update local sums and counts
         for (int i = 0; i < num_local_points; i++) {
-            double min_dist = INFINITY;
+            double min_dist = squared_euclidean_distance(local_points[i], centroids[0]);
             int closest = 0;
-            for (int j = 0; j < num_clusters; j++) {
-                double dist = euclidean_distance(local_points[i], centroids[j]);
+            for (int j = 1; j < num_clusters; j++) {
+                double dist = squared_euclidean_distance(local_points[i], centroids[j]);
                 if (dist < min_dist) {
                     min_dist = dist;
                     closest = j;
@@ -73,10 +80,12 @@ void k_means_clustering(const char *filename, int num_points, Point *points, int
         double *recv_sum_y = rank == 0 ? malloc(num_clusters * sizeof(double)) : NULL;
         int *recv_counts = rank == 0 ? malloc(num_clusters * sizeof(int)) : NULL;
 
+        // Reduce local sums and counts to compute global sums and counts
         MPI_Reduce(sum_x, recv_sum_x, num_clusters, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
         MPI_Reduce(sum_y, recv_sum_y, num_clusters, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
         MPI_Reduce(counts, recv_counts, num_clusters, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
 
+        // Update centroids in the root process
         if (rank == 0) {
             for (int i = 0; i < num_clusters; i++) {
                 centroids[i].x = recv_sum_x[i] / recv_counts[i];
@@ -87,6 +96,7 @@ void k_means_clustering(const char *filename, int num_points, Point *points, int
             free(recv_counts);
         }
 
+        // Broadcast updated centroids to all processes
         MPI_Bcast(centroids, num_clusters * DIMENSIONS, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
         free(sum_x);
@@ -94,6 +104,7 @@ void k_means_clustering(const char *filename, int num_points, Point *points, int
         free(counts);
     }
 
+    // Print final centroids in the root process
     if (rank == 0) {
         printf("Final Centroids for %s:\n", filename);
         for (int i = 0; i < num_clusters; i++) {
@@ -112,8 +123,9 @@ int main(int argc, char** argv) {
     char filename[] = "points_50_000.txt";
     int num = 50000;
     Point *points = NULL;
-    int rank;
+    int rank, size;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &size);
 
     if (rank == 0) {
         points = (Point *)malloc(num * sizeof(Point));
@@ -124,7 +136,7 @@ int main(int argc, char** argv) {
         read_points_from_file(filename, num, points);
     }
     clock_t start_time = clock();
-    k_means_clustering(filename, num, points, 10); // Assuming 10 clusters
+    k_means_clustering(filename, num, points, 10, rank, size); // Assuming 10 clusters
 	clock_t end_time = clock();
     if (rank == 0) {
         free(points);
