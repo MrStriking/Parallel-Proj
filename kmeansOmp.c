@@ -12,8 +12,10 @@ typedef struct {
     double y;
 } Point;
 
-double euclidean_distance(Point a, Point b) {
-    return sqrt((a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y));
+double squared_euclidean_distance(Point a, Point b) {
+    double dx = a.x - b.x;
+    double dy = a.y - b.y;
+    return dx * dx + dy * dy;
 }
 
 void read_points_from_file(const char *filename, int num_points, Point *points) {
