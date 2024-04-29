@@ -13,10 +13,8 @@ typedef struct {
     double y;
 } Point;
 
-double squared_euclidean_distance(Point a, Point b) {
-    double dx = a.x - b.x;
-    double dy = a.y - b.y;
-    return dx * dx + dy * dy;
+double euclidean_distance(Point a, Point b) {
+    return sqrt((a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y));
 }
 
 void read_points_from_file(const char *filename, int num_points, Point *points) {
@@ -52,10 +50,10 @@ void k_means_clustering(const char *filename, int num_points, Point *points, int
         int *counts = calloc(num_clusters, sizeof(int));
 
         for (int i = 0; i < num_local_points; i++) {
-            double min_dist = squared_euclidean_distance(local_points[i], centroids[0]);
+            double min_dist = euclidean_distance(local_points[i], centroids[0]);
             int closest = 0;
             for (int j = 1; j < num_clusters; j++) {
-                double dist = squared_euclidean_distance(local_points[i], centroids[j]);
+                double dist = euclidean_distance(local_points[i], centroids[j]);
                 if (dist < min_dist) {
                     min_dist = dist;
                     closest = j;
