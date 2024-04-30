@@ -1,10 +1,9 @@
-%%writefile kmeansCuda.cu
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
 #include <float.h>
 #include <time.h>
+#include <cuda.h>
 
 #define D 2         // nb of coords
 #define K 10        // Number of clusters
