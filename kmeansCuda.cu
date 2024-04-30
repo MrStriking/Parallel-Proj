@@ -20,7 +20,7 @@ __global__ void kMeansClusterAssignment(float* d_datapoints, int* d_clust_assn, 
     float min_dist = FLT_MAX;
     int closest_centroid = -1;
 
-    for (int c = 0; c < K; ++c) {
+    for (int c = 0; c < K; c++) {
         float dist = distance(d_datapoints[2 * idx], d_datapoints[2 * idx + 1], d_centroids[2 * c], d_centroids[2 * c + 1]);
         if (dist < min_dist) {
             min_dist = dist;
@@ -34,7 +34,7 @@ __global__ void kMeansCentroidUpdate(float* h_datapoints, int* h_clust_assn, flo
 
     float clust_datapoint_sums[2 * K] = { 0 };
 
-    for (int j = 0; j < N; ++j) {
+    for (int j = 0; j < N; j++) {
         int clust_id = h_clust_assn[j];
         clust_datapoint_sums[2 * clust_id] += h_datapoints[2 * j];
         clust_datapoint_sums[2 * clust_id + 1] += h_datapoints[2 * j + 1];
