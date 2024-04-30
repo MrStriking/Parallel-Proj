@@ -22,8 +22,7 @@ __global__ void kMeansClusterAssignment(float* d_datapoints, int* d_clust_assn, 
 
     for (int c = 0; c < K; ++c) {
         float dist = distance(d_datapoints[2 * idx], d_datapoints[2 * idx + 1], d_centroids[2 * c], d_centroids[2 * c + 1]);
-        if (dist < min_dist)
-        {
+        if (dist < min_dist) {
             min_dist = dist;
             closest_centroid = c;
         }
@@ -42,8 +41,7 @@ __global__ void kMeansCentroidUpdate(float* h_datapoints, int* h_clust_assn, flo
         h_clust_sizes[clust_id] += 1;
     }
     for (int idx = 0; idx < K; idx++) {
-        if (h_clust_sizes[idx])
-        {
+        if (h_clust_sizes[idx]) {
             h_centroids[2 * idx] = clust_datapoint_sums[2 * idx] / h_clust_sizes[idx];
             h_centroids[2 * idx + 1] = clust_datapoint_sums[2 * idx + 1] / h_clust_sizes[idx];
         }
@@ -127,7 +125,6 @@ int main() {
     }
 
     printf("Execution Time: %f seconds\n", execution_time);
-
     free(h_centroids);
     free(h_datapoints);
     free(h_clust_sizes);
@@ -135,6 +132,5 @@ int main() {
     cudaFree(d_datapoints);
     cudaFree(d_clust_assn);
     cudaFree(d_centroids);
-
     return 0;
 }
