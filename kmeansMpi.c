@@ -6,7 +6,7 @@
 #include <mpi.h>
 
 #define DIMENSIONS 2
-#define MAX_ITERATIONS 100
+#define MAX_ITERATIONS 1000
 
 typedef struct {
     double x;
